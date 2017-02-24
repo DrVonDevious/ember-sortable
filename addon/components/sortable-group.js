@@ -1,158 +1,186 @@
 import Ember from 'ember';
 import layout from '../templates/components/sortable-group';
-import computed from 'ember-computed';
-import {invokeAction} from 'ember-invoke-action';
-
+import computed from 'ember-new-computed';
 const { A, Component, get, set, run } = Ember;
 const a = A;
 const NO_MODEL = {};
 
-/**
- * @module ember-sortable
- * @class SortableGroup
- * @extends Ember.Component
- */
 export default Component.extend({
   layout: layout,
 
-  attributeBindings: ['data-test-selector'],
-
   /**
-   * Direction this group can be sorted in. Can be either 'y' or 'x'
-   *
-   * @property direction
-   * @type string
-   * @default y
-   * @public
+   @property direction
+   @type string
+   @default y
    */
   direction: 'y',
 
   /**
-   * Optional "group model" to set. If this property is set,
-   * it will be passed in as the first argument to the
-   * {{#crossLink "SortableGroup/onChange:property"}}onChange action{{/crossLink}}
-   *
-   * @property model
-   * @type Any
-   * @default null
-   * @public
+   @property model
+   @type Any
+   @default null
    */
   model: NO_MODEL,
 
   /**
-   * @type Ember.NativeArray
-   * @property items
-   * @public
+   @property items
+   @type Ember.NativeArray
    */
   items: computed(() => a()),
 
   /**
-   * Position for the first item.
-   * If spacing is present, first item's position will have to change as well.
-   *
-   * @property itemPosition
-   * @type Number
-   * @public
+   Position for the first item.
+   If spacing is present, first item's position will have to change as well.
+   @property itemPosition
+   @type Number
    */
-  itemPosition: computed(function() {
+  itemPosition: computed(function () {
     let direction = this.get('direction');
 
     return this.get(`sortedItems.firstObject.${direction}`) - this.get('sortedItems.firstObject.spacing');
   }).volatile(),
-
-  /**
-   * List of items sorted by direction.
-   *
-   * @property sortedItems
-   * @type Array
-   * @public
-   */
-  sortedItems: computed(function() {
-    let items = a(this.get('items'));
-    let direction = this.get('direction');
-
-    return items.sortBy(direction);
+  itemPositionX: computed('sortedItems', function () {
+    return 0 - this.get('sortedItems.firstObject.spacing');
+  }).volatile(),
+  itemPositionY: computed('sortedItems', function () {
+    return 0 - this.get('sortedItems.firstObject.spacing');
   }).volatile(),
 
   /**
-   * Register an item with this group.
-   *
-   * @method registerItem
-   * @param {SortableItem} item
-   * @public
+   @property sortedItems
+   @type Array
+   */
+  sortedItems: computed('items', function () {
+    let items = a(this.get('items'));
+    let direction = this.get('direction');
+
+    if (direction === 'xy') {
+      return this.get('items').sort((a, b) => {
+        return get(a, 'x') === get(b, 'x') && get(a, 'y') === get(b, 'y') ? 1 : get(a, 'x') - get(b, 'x');
+      }).sort((a, b) => { return get(a, 'y') - get(b, 'y') });
+    } else {
+      return items.sortBy(direction);
+    }
+  }).volatile(),
+
+  /**
+   Register an item with this group.
+   @method registerItem
+   @param {SortableItem} [item]
    */
   registerItem(item) {
     this.get('items').addObject(item);
   },
 
   /**
-   * De-register an item with this group.
-   *
-   * @method deregisterItem
-   * @param {SortableItem} item
-   * @public
+   De-register an item with this group.
+   @method deregisterItem
+   @param {SortableItem} [item]
    */
   deregisterItem(item) {
     this.get('items').removeObject(item);
   },
 
   /**
-   * Prepare for sorting.
-   * Main purpose is to stash the current itemPosition so
-   * we don’t incur expensive re-layouts.
-   *
-   * @method prepare
-   * @public
+   Prepare for sorting.
+   Main purpose is to stash the current itemPosition so
+   we don’t incur expensive re-layouts.
+   @method prepare
    */
   prepare() {
-    this._itemPosition = this.get('itemPosition');
+    this._itemPosition = this.get('itemPosition')
+    this._itemPositionX = this.get('itemPositionX');
+    this._itemPositionY = this.get('itemPositionY');
   },
 
   /**
-   * Update item positions (relative to the first element position).
-   *
-   * @method update
-   * @public
+   Update item positions (relatively to the first element position).
+   @method update
    */
   update() {
     let sortedItems = this.get('sortedItems');
     // Position of the first element
     let position = this._itemPosition;
+    let positionX = this._itemPositionX;
+    let positionY = this._itemPositionY;
 
     // Just in case we haven’t called prepare first.
     if (position === undefined) {
       position = this.get('itemPosition');
     }
+    if (positionX === undefined) {
+      positionX = this.get('itemPositionX');
+    }
+    if (positionY === undefined) {
+      positionY = this.get('itemPositionY');
+    }
 
-    sortedItems.forEach(item => {
-      let dimension;
+    let startX = positionX;
+    let startY = positionY;
+
+    //const draggingItem = sortedItems.findBy('isDragging', true);
+    const maxWidth = Math.max(...get(this, 'sortedItems').mapBy('width'));
+    const numColumns = get(this, 'sortedItems').filter(function(item, index, enumerable){
+      return !item.isDragging;
+    }).uniqBy('x').length;
+    sortedItems.forEach((item, index) => {
       let direction = this.get('direction');
+      if (get(this, 'direction') === 'xy') {
+        if (!get(item, 'isDragging')) {
+          if (this._hasX(direction)) {
+            set(item, 'x', positionX);
+          }
+          if (this._hasY(direction)) {
+            set(item, 'y', positionY);
+          }
+        }
 
-      if (!get(item, 'isDragging')) {
-        set(item, direction, position);
-      }
+        // add additional spacing around active element
+        if (get(item, 'isBusy')) {
+          positionX += get(item, 'spacing') * 2;
+          positionY += get(item, 'spacing') * 2;
+        }
 
-      // add additional spacing around active element
-      if (get(item, 'isBusy')) {
-        position += get(item, 'spacing') * 2;
-      }
+        if (this._hasX(direction)) {
+          if(numColumns === 1) {
+            positionX = startX;
+          } else if (index > 0 && 0 === (index+1) % 2) {
+            positionX = startX;
+          } else {
+            positionX = maxWidth;
+          }
+        }
 
-      if (direction === 'x') {
-        dimension = 'width';
-      }
-      if (direction === 'y') {
-        dimension = 'height';
-      }
+        if (this._hasY(direction) && index > 0 && 0 === (index+1) % 2) {
+          positionY += get(item, 'height');
+        } else if(numColumns === 1) {
+          positionY += get(item, 'height')
+        }
+      } else {
+        let dimension;
+        if (!get(item, 'isDragging')) {
+          set(item, direction, position);
+        }
 
-      position += get(item, dimension);
+        // add additional spacing around active element
+        if (get(item, 'isBusy')) {
+          position += get(item, 'spacing') * 2;
+        }
+
+        if (direction === 'x') {
+          dimension = 'width';
+        }
+        if (direction === 'y') {
+          dimension = 'height';
+        }
+
+        position += get(item, dimension);
+      }
     });
   },
 
   /**
-   * Commit the state of dragged items
-   *
-   * @method commit
-   * @public
+   @method commit
    */
   commit() {
     let items = this.get('sortedItems');
@@ -167,6 +195,8 @@ export default Component.extend({
     }
 
     delete this._itemPosition;
+    delete this._itemPositionX;
+    delete this._itemPositionY;
 
     run.schedule('render', () => {
       items.invoke('freeze');
@@ -183,17 +213,17 @@ export default Component.extend({
     });
 
     if (groupModel !== NO_MODEL) {
-      invokeAction(this, 'onChange', groupModel, itemModels, draggedModel);
+      this.sendAction('onChange', groupModel, itemModels, draggedModel);
     } else {
-      invokeAction(this, 'onChange', itemModels, draggedModel);
+      this.sendAction('onChange', itemModels, draggedModel);
     }
-  }
+  },
 
-  /**
-   * String name or action function to call whenever the sort order changes.
-   *
-   * @event onChange
-   * @type Action|String
-   * @public
-   */
+  _hasX(direction) {
+    return /[x]+/.test(direction);
+  },
+
+  _hasY(direction) {
+    return /[y]+/.test(direction);
+  }
 });
