@@ -1,6 +1,7 @@
 import Ember from 'ember';
 import layout from '../templates/components/sortable-group';
-import computed from 'ember-new-computed';
+import computed from 'ember-computed';
+import {invokeAction} from 'ember-invoke-action';
 const { A, Component, get, set, run } = Ember;
 const a = A;
 const NO_MODEL = {};
