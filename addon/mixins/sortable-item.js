@@ -1,9 +1,8 @@
 import Ember from 'ember';
-import computed from 'ember-new-computed';
-import scrollParent from '../system/scroll-parent';
-import ScrollContainer from '../system/scroll-container';
+import computed from 'ember-computed';
 import {invokeAction} from 'ember-invoke-action';
-import { throttle } from 'ember-runloop';
+import {throttle} from 'ember-runloop';import scrollParent from '../system/scroll-parent';
+import ScrollContainer from '../system/scroll-container';
 
 const { Mixin, $, run, run: { bind } } = Ember;
 const { Promise } = Ember.RSVP;
