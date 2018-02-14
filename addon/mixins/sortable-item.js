@@ -529,7 +529,7 @@ export default Mixin.create({
     YdragOrigin = getY(startEvent);
     YelementOrigin = this.get('y');
     YscrollOrigin = parentElement.offset().top;
-    if (groupDirection === 'xy') {
+    if (groupDirection.length > 1) {
       dragOrigin = getY(startEvent);
       elementOrigin = this.get('y');
       scrollOrigin = parentElement.offset().top;
@@ -595,7 +595,7 @@ export default Mixin.create({
       });
     }
 
-    if(groupDirection === 'xy') {
+    if(groupDirection.length > 1) {
       let x = this.get('x');
       let dx = x - this.element.offsetLeft + parseFloat(this.$().css('margin-left'));
 
@@ -616,7 +616,7 @@ export default Mixin.create({
     if(this.get('isDestroyed') || this.get('isDestroying')){
       return;
     }
-    
+
     let updateInterval = this.get('updateInterval');
     const groupDirection = this.get('group.direction');
 
@@ -627,7 +627,7 @@ export default Mixin.create({
       this.set('y', dimension);
     }
 
-    if (groupDirection === 'xy') {
+    if (groupDirection.length > 1) {
       this.set('x', dimension.x);
       this.set('y', dimension.y);
     }
@@ -658,7 +658,7 @@ export default Mixin.create({
     @private
   */
   _preventClick(element) {
-    $(element).one('click', function(e){ 
+    $(element).one('click', function(e){
       e.stopPropagation();
       e.preventDefault();
       e.stopImmediatePropagation();
@@ -692,7 +692,7 @@ export default Mixin.create({
     if(this.get('isDestroyed') || this.get('isDestroying')){
       return;
     }
-    
+
     invokeAction(this, 'onDragStop', this.get('model'));
     this.set('isDropping', false);
     this.set('wasDropped', true);

@@ -52,13 +52,12 @@ export default Component.extend({
    @type Array
    */
   sortedItems: computed('items', function () {
-    let items = a(this.get('items'));
-    let direction = this.get('direction');
+    const items = a(this.get('items'));
+    const direction = this.get('direction');
 
-    if (direction === 'xy') {
-      return this.get('items').sort((a, b) => {
-        return get(a, 'x') === get(b, 'x') && get(a, 'y') === get(b, 'y') ? 1 : get(a, 'x') - get(b, 'x');
-      }).sort((a, b) => { return get(a, 'y') - get(b, 'y') });
+    if (direction.length === 2) {
+      const [first, second] = direction.split('');
+      return items.sort((a, b) => get(a, first) === get(b, first) ? get(a, second) - get(b, second) : get(a, first) - get(b, first));
     } else {
       return items.sortBy(direction);
     }
@@ -89,7 +88,7 @@ export default Component.extend({
    @method prepare
    */
   prepare() {
-    this._itemPosition = this.get('itemPosition')
+    this._itemPosition = this.get('itemPosition');
     this._itemPositionX = this.get('itemPositionX');
     this._itemPositionY = this.get('itemPositionY');
   },
@@ -126,7 +125,7 @@ export default Component.extend({
     }).uniqBy('x').length;
     sortedItems.forEach((item, index) => {
       let direction = this.get('direction');
-      if (get(this, 'direction') === 'xy') {
+      if (get(this, 'direction').length > 1) {
         if (!get(item, 'isDragging')) {
           if (this._hasX(direction)) {
             set(item, 'x', positionX);
