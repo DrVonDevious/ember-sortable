@@ -535,6 +535,36 @@ export default Mixin.create({
         this._drag(y);
       };
     }
+
+    let XdragOrigin, YdragOrigin;
+    let XelementOrigin, YelementOrigin;
+    let XscrollOrigin, YscrollOrigin;
+
+    XdragOrigin = getX(startEvent);
+    XelementOrigin = this.get('x');
+    XscrollOrigin = parentElement.offset().left;
+
+    YdragOrigin = getY(startEvent);
+    YelementOrigin = this.get('y');
+    YscrollOrigin = parentElement.offset().top;
+    if (groupDirection.length > 1) {
+      dragOrigin = getY(startEvent);
+      elementOrigin = this.get('y');
+      scrollOrigin = parentElement.offset().top;
+
+      return event => {
+        let dx = getX(event) - XdragOrigin;
+        let scrollX = parentElement.offset().left;
+        let x = XelementOrigin + dx + (XscrollOrigin - scrollX);
+
+        let dy = getY(event) - YdragOrigin;
+        let scrollY = parentElement.offset().top;
+        let y = YelementOrigin + dy + (YscrollOrigin - scrollY);
+
+        this._drag({ x, y });
+      };
+    }
+
   },
 
   /**
@@ -582,6 +612,18 @@ export default Mixin.create({
         transform: `translateY(${dy}px)`
       });
     }
+
+    if(groupDirection.length > 1) {
+      let x = this.get('x');
+      let dx = x - this.element.offsetLeft + parseFloat(this.$().css('margin-left'));
+
+      let y = this.get('y');
+      let dy = y - this.element.offsetTop;
+
+      this.$().css({
+        transform: `translateX(${dx}px) translateY(${dy}px)`
+      });
+    }
   },
 
   /**
@@ -589,7 +631,7 @@ export default Mixin.create({
     @private
   */
   _drag(dimension) {
-    if(!this.get("isDragging")) {
+    if(!this.get("isDragging") || this.get('isDestroyed') || this.get('isDestroying')){
       return;
     }
     let updateInterval = this.get('updateInterval');
@@ -600,6 +642,11 @@ export default Mixin.create({
     }
     if (groupDirection === 'y') {
       this.set('y', dimension);
+    }
+
+    if (groupDirection.length > 1) {
+      this.set('x', dimension.x);
+      this.set('y', dimension.y);
     }
 
     run.throttle(this, '_tellGroup', 'update', updateInterval);
@@ -665,6 +712,10 @@ export default Mixin.create({
     @private
   */
   _complete() {
+    if(this.get('isDestroyed') || this.get('isDestroying')){
+      return;
+    }
+
     invokeAction(this, 'onDragStop', this.get('model'));
     this.set('isDropping', false);
     this.set('wasDropped', true);
