@@ -541,6 +541,35 @@ export default Mixin.create({
         this._drag(y);
       };
     }
+
+    let XdragOrigin, YdragOrigin;
+    let XelementOrigin, YelementOrigin;
+    let XscrollOrigin, YscrollOrigin;
+
+    XdragOrigin = getX(startEvent);
+    XelementOrigin = this.get('x');
+    XscrollOrigin = parentElement.getBoundingClientRect().left;
+
+    YdragOrigin = getY(startEvent);
+    YelementOrigin = this.get('y');
+    YscrollOrigin = parentElement.getBoundingClientRect().top;
+    if (groupDirection.length > 1) {
+      dragOrigin = getY(startEvent);
+      elementOrigin = this.get('y');
+      scrollOrigin = parentElement.getBoundingClientRect().top;
+
+       return event => {
+        let dx = getX(event) - XdragOrigin;
+        let scrollX = parentElement.getBoundingClientRect().left;
+        let x = XelementOrigin + dx + (XscrollOrigin - scrollX);
+
+         let dy = getY(event) - YdragOrigin;
+        let scrollY = parentElement.getBoundingClientRect().top;
+        let y = YelementOrigin + dy + (YscrollOrigin - scrollY);
+
+         this._drag({ x, y });
+      };
+    }
   },
 
   /**
@@ -584,6 +613,16 @@ export default Mixin.create({
 
       this.element.style.transform = `translateY(${dy}px)`;
     }
+
+    if(groupDirection.length > 1) {
+      let x = this.get('x');
+      let dx = x - this.element.offsetLeft + parseFloat(getComputedStyle(this.element).marginLeft);
+
+      let y = this.get('y');
+      let dy = y - this.element.offsetTop;
+
+      this.element.style.transform = `translateX(${dx}px) translateY(${dy}px)`;
+    }
   },
 
   /**
@@ -602,6 +641,11 @@ export default Mixin.create({
     }
     if (groupDirection === 'y') {
       this.set('y', dimension);
+    }
+
+    if (groupDirection.length > 1) {
+      this.set('x', dimension.x);
+      this.set('y', dimension.y);
     }
 
     throttle(this, '_tellGroup', 'update', updateInterval);
@@ -654,32 +698,17 @@ export default Mixin.create({
     @return Promise
   */
   _waitForTransition() {
-    if (DEBUG) {
-      // emit event for tests to start waiting for the transition to end
-      document.dispatchEvent(new Event('ember-sortable-drop-start'));
-    }
+    return new Promise(resolve => {
+      run.next(() => {
+        let duration = 0;
 
-    let transitionPromise;
-
-    if (this.get('isAnimated')) {
-      const deferred = defer();
-      this.element.addEventListener('transitionend', deferred.resolve);
-      transitionPromise = deferred.promise.finally(() => {
-        this.element.removeEventListener('transitionend', deferred.resolve);
-      });
-    } else {
-      const duration = this.get('isAnimated') ? this.get('transitionDuration') : 200;
-      transitionPromise = new Promise((resolve) => run.later(resolve, duration));
-    }
-
-    if (DEBUG) {
-      transitionPromise = transitionPromise.finally(() => {
-        // emit event for tests to stop waiting
-        document.dispatchEvent(new Event('ember-sortable-drop-stop'));
-      });
-    }
-
-    return transitionPromise;
+        if (this.get('isAnimated')) {
+          duration = this.get('transitionDuration');
+        }
+        
+        run.later(this, resolve, duration);
+      })
+    });
   },
 
   /**

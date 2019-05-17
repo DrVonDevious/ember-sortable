@@ -11,8 +11,6 @@ const NO_MODEL = {};
 export default Component.extend({
   layout: layout,
 
-  attributeBindings: ['data-test-selector'],
-
   /**
     @property direction
     @type string
@@ -44,16 +42,26 @@ export default Component.extend({
 
     return this.get(`sortedItems.firstObject.${direction}`) - this.get('sortedItems.firstObject.spacing');
   }).volatile(),
-
+  itemPositionX: computed('sortedItems', function () {
+    return 0 - this.get('sortedItems.firstObject.spacing');
+  }).volatile(),
+  itemPositionY: computed('sortedItems', function () {
+    return 0 - this.get('sortedItems.firstObject.spacing');
+  }).volatile(),
   /**
     @property sortedItems
     @type Array
   */
-  sortedItems: computed(function() {
-    let items = a(this.get('items'));
-    let direction = this.get('direction');
+  sortedItems: computed('items', function() {
+    const items = a(this.get('items'));
+    const direction = this.get('direction');
 
-    return a(items.sortBy(direction));
+    if (direction.length === 2) {
+      const [first, second] = direction.split('');
+      return items.sort((a, b) => get(a, first) === get(b, first) ? get(a, second) - get(b, second) : get(a, first) - get(b, first));
+    } else {
+      return items.sortBy(direction);
+    }
   }).volatile(),
 
   /**
@@ -82,6 +90,8 @@ export default Component.extend({
   */
   prepare() {
     this._itemPosition = this.get('itemPosition');
+    this._itemPositionX = this.get('itemPositionX');
+    this._itemPositionY = this.get('itemPositionY');
   },
 
   /**
@@ -92,33 +102,81 @@ export default Component.extend({
     let sortedItems = this.get('sortedItems');
     // Position of the first element
     let position = this._itemPosition;
+    let positionX = this._itemPositionX;
+    let positionY = this._itemPositionY;
 
     // Just in case we haven’t called prepare first.
     if (position === undefined) {
       position = this.get('itemPosition');
     }
+    if (positionX === undefined) {
+      positionX = this.get('itemPositionX');
+    }
+    if (positionY === undefined) {
+      positionY = this.get('itemPositionY');
+    }
 
-    sortedItems.forEach(item => {
-      let dimension;
+    let startX = positionX;
+    let startY = positionY;
+
+    //const draggingItem = sortedItems.findBy('isDragging', true);
+    const maxWidth = Math.max(...get(this, 'sortedItems').mapBy('width'));
+    const numColumns = get(this, 'sortedItems').filter(function(item, index, enumerable){
+      return !item.isDragging;
+    }).uniqBy('x').length;
+    sortedItems.forEach((item, index) => {
       let direction = this.get('direction');
+      if (get(this, 'direction').length > 1) {
+        if (!get(item, 'isDragging')) {
+          if (this._hasX(direction)) {
+            set(item, 'x', positionX);
+          }
+          if (this._hasY(direction)) {
+            set(item, 'y', positionY);
+          }
+        }
 
-      if (!get(item, 'isDragging')) {
-        set(item, direction, position);
-      }
+        // add additional spacing around active element
+        if (get(item, 'isBusy')) {
+          positionX += get(item, 'spacing') * 2;
+          positionY += get(item, 'spacing') * 2;
+        }
 
-      // add additional spacing around active element
-      if (get(item, 'isBusy')) {
-        position += get(item, 'spacing') * 2;
-      }
+        if (this._hasX(direction)) {
+          if(numColumns === 1) {
+            positionX = startX;
+          } else if (index > 0 && 0 === (index+1) % 2) {
+            positionX = startX;
+          } else {
+            positionX = maxWidth;
+          }
+        }
 
-      if (direction === 'x') {
-        dimension = 'width';
-      }
-      if (direction === 'y') {
-        dimension = 'height';
-      }
+        if (this._hasY(direction) && index > 0 && 0 === (index+1) % 2) {
+          positionY += get(item, 'height');
+        } else if(numColumns === 1) {
+          positionY += get(item, 'height')
+        }
+      } else {
+        let dimension;
+        if (!get(item, 'isDragging')) {
+          set(item, direction, position);
+        }
 
-      position += get(item, dimension);
+        // add additional spacing around active element
+        if (get(item, 'isBusy')) {
+          position += get(item, 'spacing') * 2;
+        }
+
+        if (direction === 'x') {
+          dimension = 'width';
+        }
+        if (direction === 'y') {
+          dimension = 'height';
+        }
+
+        position += get(item, dimension);
+      }
     });
   },
 
@@ -138,6 +196,8 @@ export default Component.extend({
     }
 
     delete this._itemPosition;
+    delete this._itemPositionX;
+    delete this._itemPositionY;
 
     run.schedule('render', () => {
       items.invoke('freeze');
@@ -158,5 +218,13 @@ export default Component.extend({
     } else {
       this.sendAction('onChange', itemModels, draggedModel);
     }
+  },
+
+  _hasX(direction) {
+    return /[x]+/.test(direction);
+  },
+
+  _hasY(direction) {
+    return /[y]+/.test(direction);
   }
 });
