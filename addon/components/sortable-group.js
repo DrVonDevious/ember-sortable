@@ -37,22 +37,25 @@ export default Component.extend({
     @property itemPosition
     @type Number
   */
-  itemPosition: computed(function() {
+  get itemPosition() {
     let direction = this.get('direction');
 
     return this.get(`sortedItems.firstObject.${direction}`) - this.get('sortedItems.firstObject.spacing');
-  }).volatile(),
-  itemPositionX: computed('sortedItems', function () {
+  }
+
+  get itemPositionX() {
     return 0 - this.get('sortedItems.firstObject.spacing');
-  }).volatile(),
-  itemPositionY: computed('sortedItems', function () {
+  }
+
+  get itemPositionY() {
     return 0 - this.get('sortedItems.firstObject.spacing');
-  }).volatile(),
+  }
+
   /**
     @property sortedItems
     @type Array
   */
-  sortedItems: computed('items', function() {
+  get sortedItems() {
     const items = a(this.get('items'));
     const direction = this.get('direction');
 
@@ -62,7 +65,7 @@ export default Component.extend({
     } else {
       return items.sortBy(direction);
     }
-  }).volatile(),
+  }
 
   /**
     Register an item with this group.
