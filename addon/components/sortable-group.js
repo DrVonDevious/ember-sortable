@@ -41,15 +41,15 @@ export default Component.extend({
     let direction = this.get('direction');
 
     return this.get(`sortedItems.firstObject.${direction}`) - this.get('sortedItems.firstObject.spacing');
-  }
+  },
 
   get itemPositionX() {
     return 0 - this.get('sortedItems.firstObject.spacing');
-  }
+  },
 
   get itemPositionY() {
     return 0 - this.get('sortedItems.firstObject.spacing');
-  }
+  },
 
   /**
     @property sortedItems
@@ -65,7 +65,7 @@ export default Component.extend({
     } else {
       return items.sortBy(direction);
     }
-  }
+  },
 
   /**
     Register an item with this group.

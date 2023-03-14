@@ -132,7 +132,7 @@ export default Mixin.create({
     let property = getComputedStyle(el).transitionProperty;
 
     return /all|transform/.test(property);
-  }
+  },
 
   /**
     The current transition duration in milliseconds.
@@ -156,7 +156,7 @@ export default Mixin.create({
     }
 
     return 0;
-  }
+  },
 
   /**
     Horizontal position of the item.
@@ -170,14 +170,14 @@ export default Mixin.create({
     }
 
     return this._x;
-  }
+  },
 
-  set x(_, value) {
+  set x(value) {
     if (value !== this._x) {
       this._x = value;
       this._scheduleApplyPosition();
     }
-  }
+  },
 
   /**
     Vertical position of the item relative to its offset parent.
@@ -190,14 +190,14 @@ export default Mixin.create({
     }
 
     return this._y;
-  }
+  },
 
-  set y(key, value) {
+  set y(value) {
     if (value !== this._y) {
       this._y = value;
       this._scheduleApplyPosition();
     }
-  }
+  },
 
   /**
     Width of the item.
@@ -215,7 +215,7 @@ export default Mixin.create({
     width += getBorderSpacing(el).horizontal;
 
     return width;
-  }
+  },
 
   /**
     Height of the item including margins.
@@ -232,7 +232,7 @@ export default Mixin.create({
     height += getBorderSpacing(el).vertical;
 
     return height;
-  }
+  },
 
   /**
     @private
