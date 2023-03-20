@@ -217,9 +217,13 @@ export default Component.extend({
     });
 
     if (groupModel !== NO_MODEL) {
-      this.sendAction('onChange', groupModel, itemModels, draggedModel);
+      if (typeof this['onChange'] === 'function') {
+        this['onChange'](groupModel, itemModels, draggedModel);
+      }
     } else {
-      this.sendAction('onChange', itemModels, draggedModel);
+      if (typeof this['onChange'] === 'function') {
+        this['onChange'](itemModels, draggedModel);
+      }
     }
   },
 

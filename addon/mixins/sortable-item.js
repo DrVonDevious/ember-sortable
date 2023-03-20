@@ -403,7 +403,9 @@ export default Mixin.create({
 
     this._tellGroup('prepare');
     this.set('isDragging', true);
-    this.sendAction('onDragStart', this.get('model'));
+    if (typeof this['onDragStart'] === 'function') {
+        this['onDragStart'](this.get('model'));
+    }
     this._scrollOnEdges(drag);
   },
 
@@ -714,7 +716,9 @@ export default Mixin.create({
     @private
   */
   _complete() {
-    this.sendAction('onDragStop', this.get('model'));
+    if (typeof this['onDragStop'] === 'function') {
+        this['onDragStop'](this.get('model'));
+    }
     this.set('isDropping', false);
     this.set('wasDropped', true);
     this._tellGroup('commit');
