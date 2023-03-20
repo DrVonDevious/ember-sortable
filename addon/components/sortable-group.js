@@ -38,17 +38,17 @@ export default Component.extend({
     @type Number
   */
   get itemPosition() {
-    let direction = this.get('direction');
+    let direction = get(this, 'direction');
 
-    return this.get(`sortedItems.firstObject.${direction}`) - this.get('sortedItems.firstObject.spacing');
+    return get(this, `sortedItems.firstObject.${direction}`) - get(this, 'sortedItems.firstObject.spacing');
   },
 
   get itemPositionX() {
-    return 0 - this.get('sortedItems.firstObject.spacing');
+    return 0 - get(this, 'sortedItems.firstObject.spacing');
   },
 
   get itemPositionY() {
-    return 0 - this.get('sortedItems.firstObject.spacing');
+    return 0 - get(this, 'sortedItems.firstObject.spacing');
   },
 
   /**
@@ -56,8 +56,8 @@ export default Component.extend({
     @type Array
   */
   get sortedItems() {
-    const items = a(this.get('items'));
-    const direction = this.get('direction');
+    const items = a(get(this, 'items'));
+    const direction = get(this, 'direction');
 
     if (direction.length === 2) {
       const [first, second] = direction.split('');
@@ -73,7 +73,7 @@ export default Component.extend({
     @param {SortableItem} [item]
   */
   registerItem(item) {
-    this.get('items').addObject(item);
+    get(this, 'items').addObject(item);
   },
 
   /**
@@ -82,7 +82,7 @@ export default Component.extend({
     @param {SortableItem} [item]
   */
   deregisterItem(item) {
-    this.get('items').removeObject(item);
+    get(this, 'items').removeObject(item);
   },
 
   /**
@@ -92,9 +92,9 @@ export default Component.extend({
     @method prepare
   */
   prepare() {
-    this._itemPosition = this.get('itemPosition');
-    this._itemPositionX = this.get('itemPositionX');
-    this._itemPositionY = this.get('itemPositionY');
+    this._itemPosition = get(this, 'itemPosition');
+    this._itemPositionX = get(this, 'itemPositionX');
+    this._itemPositionY = get(this, 'itemPositionY');
   },
 
   /**
@@ -102,7 +102,7 @@ export default Component.extend({
     @method update
   */
   update() {
-    let sortedItems = this.get('sortedItems');
+    let sortedItems = get(this, 'sortedItems');
     // Position of the first element
     let position = this._itemPosition;
     let positionX = this._itemPositionX;
@@ -110,13 +110,13 @@ export default Component.extend({
 
     // Just in case we haven’t called prepare first.
     if (position === undefined) {
-      position = this.get('itemPosition');
+      position = get(this, 'itemPosition');
     }
     if (positionX === undefined) {
-      positionX = this.get('itemPositionX');
+      positionX = get(this, 'itemPositionX');
     }
     if (positionY === undefined) {
-      positionY = this.get('itemPositionY');
+      positionY = get(this, 'itemPositionY');
     }
 
     let startX = positionX;
@@ -128,7 +128,7 @@ export default Component.extend({
       return !item.isDragging;
     }).uniqBy('x').length;
     sortedItems.forEach((item, index) => {
-      let direction = this.get('direction');
+      let direction = get(this, 'direction');
       if (get(this, 'direction').length > 1) {
         if (!get(item, 'isDragging')) {
           if (this._hasX(direction)) {
@@ -187,8 +187,8 @@ export default Component.extend({
     @method commit
   */
   commit() {
-    let items = this.get('sortedItems');
-    let groupModel = this.get('model');
+    let items = get(this, 'sortedItems');
+    let groupModel = get(this, 'model');
     let itemModels = items.mapBy('model');
     let draggedItem = items.findBy('wasDropped', true);
     let draggedModel;
